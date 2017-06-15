@@ -1,0 +1,11 @@
+\section{Conclusion}
+\label{sec:conclusion}
+In this paper, we provide the SafeExit, an extension of Tor, which provides a protection for the exit node in Tor by finding the initiator of the Tor traffic that satisfies the audit condition.
+SafeExit doesn't degrade the anonymity of the legal Tor users, as the SafeExit borrows the spirt of Tor to construct a chain of AORs to separate the user from the ACert.
+Only when the exit node and all the AORs selected by the user cooperate,
+ the user is linked with its activates which happens only in the audit.
+In the situation except the audit, the probability of the cooperation is as negligible as all the selected ORs in Tor collude.
+%Moreover, the traffic between the Tor that adopts the SafeExit extension and the standard Tor, is indistinguishable,
+ %which allows SafeExit to blend its traffic in the Tor traffic  and be deployed gradually.
+%All TEs in the SafeExit tunnel cooperatively generate  the evidence for the auditor to unmask the initiator of a Tor stream when necessary.
+

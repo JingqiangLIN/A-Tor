@@ -1,0 +1,171 @@
+\section{Overview of A-Tor}
+\label{sec:Overview}
+%主要介绍名词、设计思想、safeExit与Tor的关系
+The section first presents the threat model and the design goal.
+Then, the basic idea of A-Tor is described.
+
+\subsection{Threat Model and Design Goal}
+A-Tor follows the same assumptions as Tor \cite{dingledine2004tor}.
+A great number of ORs run over the Internet,
+  each of which maintains a key pair by itself.
+The public key of an OR is published in directory servers,
+ and then known by all users and other ORs.
+A correct OR follows the protocol strictly
+ and compromised ORs behave arbitrarily.
+We assume that
+    the ORs of a Tor circuit are not compromised simultaneously;
+so a user will increase the number of ORs in a circuit,
+  to enhance the assurance level of anonymity.
+
+%The only difference is that SafeExit introduces a new type of node, i.e., AOR,
+%who provides the protection for both the Tor users and SafeExit nodes.
+%For the users, the AORs prevent their anonymity  degraded in SafeExit.
+%For the SafeExit nodes, the AORs provide the proof that the correctly signed traffic is from a Tor user, making the SafeExit node never suffer the consequence of the relayed traffic.
+%The assumption on AORs is the same as that on ORs in Tor, that is,
+%%The  TEs are deployed to protect the SafeExit node by helping the auditors identify the initiators of the activities when necessary.
+% all the AORs follow the protocol correctly, %, that is, they process the received requests and log the information as the protocol defines.
+%while only a part of AORs may collude to break the users' anonymity.
+%The information of AORs are also contained in the directory servers.
+%be curious as they may refuse correct requests, record the transmitted messages,
+% collude with other nodes to infer the linkage between the users and their activities.
+%For different users,
+%the trust sets of TEs are different, and the sets of curious TEs also vary.
+%In the trust transitivity, the trust on TEs decreases while the possibility of the TEs to be curious increases.
+%The trust on TEs decreases in the trust transitivity and the possibility of the TEs to be curious increases.
+%However, we assume that the TEs directly trusted by the user never leak the user's identifier.
+%  while the TEs directly trusted by the SafeExit node will perform the check correctly to avoid the SafeExit node afford the liability for the malicious users who send the illegal activities through the SafeExit node.
+%Moreover,  a part of TEs  may be malicious for the SafeExit node. These malicious TEs help to hide the malicious users' identifiers in the audit, for example, by logging incorrectly, allowing the users to employ another anonymity networks to construct the TE chain.
+%Here, we assume that the TEs in the TE chain initiated from the SafeExit node perform correctly for the SafeExit node.
+
+
+
+
+%We assume that the pool of users is large enough to provide traffic for valid users to blend into.
+%The directory servers are supposed to be trusted which provide the correct directories of onion routers.
+%As in Tor, most onion routers are honest but curious,
+% and only some fraction of onion routers are malicious, who may collude with other malicious ones to generate, modify, delete,
+%  or delay traffic relayed from them.
+%The SafeExit nodes relay the users' traffic honestly to the destination and may collude with malicious onion routers to find the users' identifiers.
+%Finally, the destination is assumed to provide services which can be accessed anonymously. %and never require users' identifiers.
+
+%The nodes are connected using TCP links.
+%The communication between the user and the ORs are encrypted by TLS. % connections. % by adversaries.
+%%%As in Tor, SafeExit  cannot provide anonymity for users
+% when there exists adversaries who can observe the global network traffic.
+%However, SafeExit ensures users' anonymity when the passive adversaries can observe only parts of the traffic (as in Tor).
+%Moreover, it unlinks users' identifiers with their activities
+% when there are active adversaries who may compromise a fraction of nodes to tamper the traffic.
+
+
+%In SafeExit, each node of  ORs, AORs, directory servers and SafeExit nodes has a certificate to bind its public key with the identifier while the corresponding private key is well protected. Once the private key is thought to be leaked, the corresponding owner revokes the certificate and applies a new certificate with a new key pair in time. Therefore, in SafeExit, once the signature is correctly verified using the public key in one certificate, the initiator can be identified.
+
+
+
+%Each user negotiates a symmetric key (e.g., AES) with each selected OR as in Tor.  %using the public key pairs with the Diffie-Hellman key agreement protocol,
+ %and the negotiated symmetric key  is used
+%  to relay the traffic to destination without
+%TEs use their private keys to generate the signatures for the public keys generated by the users,
+% while the directory servers use their private keys to sign the directories.
+%For each Tor stream, each user has a private key to sign the sent messages,
+% while the corresponding public key is bound with the user by the TEs.
+%Moreover, the digest algorithm (e.g., SHA-1) is used to ensure the integrity of transmitted messages.
+%We assume all the adopted cryptographic algorithms are secure,
+% that is,
+% malicious entities cannot forge valid signatures of the correct entities, % without the private keys
+%  infer the plain from the cipher without the corresponding keys,
+%   or find a different message with the same digest of the other.
+
+
+%The TEs trusted by the user
+
+%  the TEs directly trusted by the user will never collude with others or leak the user's identifier;
+%   while other TEs may attempt to break the user's anonymity.
+
+
+A-Tor attempts to prevent attackers from linking a pair of communication parties (i.e., an A-Tor user and the destination server)
+ or from linking multiple communications to or from a single user as Tor does,
+ while provides verifiable proofs to link (the packets of) a specified communication to an anonymous user
+     when enough ORs cooperate.
+The anonymity of an A-Tor user is compromised
+  only if a certain number of ORs are compromised to link his/her activities,
+  and this number is specified by each user according to his/her security concern.
+These proofs are stored on multiple ORs,
+ and presented together to reveal the user's identity of a specified communication
+    when a law enforcement agency requires the ORs to do.
+Moreover, malicious ORs
+  could not collude to forge a complete chain of proofs against an innocent user.
+
+Finally,
+  because A-Tor attempts to provide verifiable and unforgeable proofs to reveal the user identity,
+    we assume that each A-Tor user has an identity credential
+   (e.g., a non-anonymous X.509 certificate to certify his/her IP address or other alternative identity),
+   which is verifiable to the ORs.
+More discussions about this credential are included in Section \ref{sec:extended-discussion}.
+
+\subsection{Basic Idea}
+
+The basic idea of A-Tor is,
+ \emph{a})
+ in the anon-cert phase,
+ an A-Tor user constructs a Tor circuit to apply for an anonymous certificate from the last OR
+    (or the certification node),
+ and \emph{b})
+ in the anon-comm phase,
+ the anonymous certificate is presented as a credential
+   to the exit node of the second Tor circuit.
+
+In the anon-cert phase,
+   the A-Tor user
+   constructs the anon-cert Tor circuit.
+Then, the user sends the credential of his/her identity to the first OR of the anon-cert Tor circuit
+    (called the \emph{registration node}).
+After verifying the credential,
+  the OR signs an anonymous-certificate request,
+    encrypts the message by the public key of the next OR of the circuit,
+    and sends it.
+Then,
+    after decrypting the message and verifying the signature,
+    the receiver OR signs, encrypts and sends it to the next OR,
+    until the anonymous-certificate request is transmitted  to the certification node.
+Finally,
+  the certification node signs the anonymous certificate,
+   and it is relayed to the A-Tor user.
+The certificate is encrypted iteratively by each OR as regular Tor packets.
+Note that the A-Tor's identity is not included in either the anonymous-certificate request or the certificate.
+The signed request messages are stored on the receiver ORs as proofs to reveal the A-TOR user's identity in the future.
+
+Next, after constructing the  anon-comm circuit as Tor,
+  the A-Tor user sends the anonymous certificate to the exit node.
+The exit node verifies that the certificate is signed by another OR.
+Then,
+  each relayed packet is signed by the A-Tor user,
+  and the exit node verifies the signature using the anonymous certificate
+   before forwarding it to the destination server.
+These signatures are stored on the exit node as verifiable proofs.
+Note the anonymous certificate and the signatures are invisible to other ORs of the anon-comm Tor circuit.
+Signing every packet one by one is expensive,
+  and optimizations are discussed in Section \ref{sec:extended-discussion}.
+
+Each OR of A-Tor is first an OR of Tor,
+  and the A-Tor functions are extended on the ORs of the anon-cert Tor circuit and the exit node.
+Anonymous-certificate request messages and signed network packets
+ are transmitted by extended commands
+   in the Tor circuit \cite{dingledine2004tor}.
+No additional component is needed in A-Tor, compared with Tor.
+
+%SafeExit, an extension for Tor, works compatibly with Tor.
+%For those exit nodes who do not adopt SafeExit, users communicate with them using standard Tor.
+%Only the SafeExit users and the exit nodes that adopt SafeExit (called SafeExit nodes) have to add a new procedure;
+
+%SafeExit provides a protection for exit nodes without harming the anonymity of the Tor users.
+%The exit nodes who adopt this extension, are called SafeExit nodes.
+%SafeExit nodes specify their exit policies to describe that they only relay the correctly signed traffic for the user
+% who has sent the corresponding public key previously. %generated by a set of trusted entities (TE). %是否还要说明每个消息都被良好签名？
+
+%SafeExit introduces the trusted entity (TE) %that is trusted by both the users and SafeExit nodes.
+%who provides the protection for both the users and SafeExit nodes.
+%For the users, the TEs prevent their identifiers leaked in SafeExit.
+%For the SafeExit nodes, the TEs provide the proof that the correctly signed traffic is from a Tor user, making the SafeExit node free of the consequence of the relayed traffic.
+%Firstly, the TEs ensure that only the Tor user owns the private key corresponding to the public key, others can never construct the traffic with valid signatures.
+%Secondly, the TEs provide the proof that the correctly signed traffic is from a Tor user, making the SafeExit node free of the consequence of the relayed Tor traffic.
+

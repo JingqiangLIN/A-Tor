@@ -1,0 +1,413 @@
+\section{Security Analysis and Performance Evaluation}
+\label{sec:analysis}
+This section analyzes the accountable anonymity of A-Tor.
+We first evaluate the assurance level of anonymity,
+  the verifiable proofs to reveal the user's identity,
+  and the performance overhead of A-Tor.
+Finally,
+  some optimizations and extended discussions are presented.
+
+  %the node found by the auditor is indeed the initiator of Tor traffic,
+%that is, the proof used in audit cannot be forged especially in strong audit;
+%finally, we show that SafeExit  provides the same anonymity for legal users as Tor in different cases.
+%In this section, we analyzed the security of SafeExit briefly.
+
+\subsection{Anonymity}
+
+A-Tor provides anonymity with the same level of assurance as Tor.
+Firstly, in the anon-comm phase,
+  all steps of A-Tor are the same as those of Tor, except that an anonymous certificate is transmitted to the exit node.
+Because there is no identity in the anonymous certificate
+    and no OR of the anon-comm Tor circuit is involved in the the steps to apply for anonymous certificates,
+  attackers cannot obtain more information than a Tor circuit to break the anonymity.
+Secondly,
+   no (anonymous) communication with destination servers is performed in the anon-cert phase,
+   so attackers cannot obtain any information by only compromising the ORs of the anon-cert Tor circuit.
+
+%the SafeExit node relays the user's messages to the destination only when the ACert is in the validity period, that is, the current time is larger than $time_s$ and less than $time_e - delay$ where $delay$ refers to the upper bound of the time for transmitting the message to the destination.
+%For each following message sent in the Tor tunnel, the SafeExit node verifies its signature using the public key in the ACert,
+%  and relays the  message to the destination only when the verification succeeds.
+%The SafeExit node  logs the ACert and  the signatures of relayed messages for audit.
+
+Next, let's consider the scenario that some ORs of two Tor circuits were compromised,
+  and assume that the certification node runs independently of the exit node.
+Because the certificate requests are also encrypted like the layers of an onion,
+only when all ORs of the anon-cert Tor circuit collude,
+  they reveal the user's identity and link it to the anonymous certificate;
+and only the exit node is able to link the anonymous certificate to the network activities.
+So, only if all ORs of the anon-cert Tor circuit and the exit node of the anon-comm circuit are compromised,
+    they are able to collude to link the A-Tor user to his/her activities.
+
+Compared with Tor,
+  there are two sequences of ORs that are able to link the communication to an A-Tor user:
+  one is composed of the ORs in the anon-comm Tor circuit,
+  and the other is the ORs of the anon-cert Tor circuit and the exit node.
+Therefore,
+    $m = n-1$ is reasonable (provided that the certification node runs independently of the exit node),
+    and two sequences present equal difficulties for attackers to break the anonymity.
+Moreover,
+    in the second sequence,
+    each OR only knows its predecessor and successor as that in the first sequence,
+    except that the certification node does not know its successor (i.e., the exit node).
+Note that the anonymous certificate is %signed by the certification node, while it is
+   transmitted as ciphertext to the exit node through two Tor circuits.
+
+
+
+As for other passive attacks, active attacks and directory attacks,
+ A-Tor provides the same protections as Tor \cite{dingledine2004tor}.
+A-Tor constructs two Tor circuits to generate verifiable proofs for accountable anonymity,
+   and the accountable anonymous communications are wrapped as regular Tor packets.
+%%%
+%%%
+%SafeExit does not harm the user's anonymity, as no one can link the data and the public key with the Tor user. the data binding the public key to the Tor user are transmitted through the standard Tor tunnel.
+%%%
+%%%
+%No single node in SafeExit can link the user with its activities.
+%Each OR cannot get more information than in standard Tor, as no OR except the SafeExit node can get the ACert
+%  nor distinguish the SafeExit traffic from the standard Tor traffic;
+%   while the SafeExit node has ACert but has no extra information to infer the initiator of the traffic.
+%For AORs, $AOR_1$ can find the user who applies  the ACert, but it doesn't know the ACert nor the user's Tor traffic;
+% $AOR_n$ knows the ACert, but has no information about the ACert applier nor the Tor traffic;
+% the other AORs have even less information as they don't know the ACert,  the user nor the Tor traffic.
+%%%
+%In SafeExit, only when the SafeExit node and all selected AORs collude, they can find the initiator of the Tor traffic. If the set of colluding nodes doesn't include the SafeExit node, these nodes fail to find the Tor traffic of the user due to the lack of the linkage between the ACert and the Tor traffic even  they  have the ACert and the corresponding applier.
+%If any AOR isn't included in the colluding set, the colluding nodes cannot find the initiator of the Tor traffic as they can never find the applier of the ACert.
+%As the SafeExit node and the AORs are chosen by the user, % and the number of AORs can be increased,
+% the probability that the SafeExit node and all selected AORs collude is as negligible as all chosen ORs in the Tor stream collude, in which case the  anonymity of Tor is broken.
+%%%
+A-Tor does not introduce additional traffic patterns,
+   compared other application protocols on top of Tor.
+%All communications are performed through Tor circuits.
+
+++++++++++++
+
+Active attacks do not have more attack opportunities,
+   because the ORs in A-Tor do not have more security assumptions than Tor.
+Each OR holds its key pair,
+   and only know its predecessor and successor in the Tor circuits
+   (or, in the ).
+
+
+  more confidential information except its key pair, and only know its predecessor and successor in the communications.
+Directory servers maintain the same information as those in Tor.
+Besides,
+  attackers cannot directly distinguish a Tor user from an A-Tor user,
+  because the additional anon-cert phase works as a regular Tor circuit construction.
+
+%%In SafeExit, the passive attack doesn't degrade the user' anonymity under the assumption that no global observers exist.
+%% An eavesdropper performs the passive attack by analyzing network traffic between the nodes, attempting  to  degrade the provided anonymity.
+%%As SafeExit doesn't introduce any pattern to the Tor traffic,
+%% it doesn't decrease the difficulties for breaking the user's anonymity in the Tor traffic.
+%%%%%%%Meanwhile, the traffic between AORs doesn't leak any information about the linkage between the user and its activities.
+%%%%%%%The eavesdropper even fails to associate the AOR traffic with the Tor traffic as the transmitted messages are encrypted. % and the ACert can be used in multiple Tor streams.
+%%%%%%%Moreover, it fails to distinguish the Tor users and  SafeExit users, as the onion router may work as the OR and AOR simultaneously.
+
+%%%%%The active attack doesn't harm the user's anonymity in SafeExit.
+%%%%%When the adversary compromises the private keys of some nodes and works as the SafeExit node or AORs,
+%%%%%   it still fails to break the anonymity as analyzed in the case where the collusion exists.
+%%%%%The adversary cannot succeed to perform the timing attack by injecting the timing pattern to the  traffic,
+%%%%%   as there is only one round communication between AORs for one ACert, and the AORS may add a random delay to  eliminate the injected timing pattern.
+%%%%%For Denial of service attack, we may increase its difficulties further by increasing the number of AORs and adopting the client puzzle~\cite{dean2001using}  at AORs.
+%%%%% SafeExit is not vulnerable to replay attacks, as the nonce is contained in each message.
+%%%%%The user can use one ACert for one Tor stream, to avoid the colluded SafeExit nodes linking  multiple Tor streams using the same ACert.
+%specify the validity period of ACert to prevent the adversary inferring the private key corresponding to the ACert.
+
+\subsection{Verifiable Proof}
+The verifiable proofs are composed of:
+    \emph{a}) the signatures stored on the exit node,
+    and \emph{b}) the certificate requests stored on the ORs of the anon-cert Tor circuit.
+Section \ref{subsec:audit} shows that,
+    the A-Tor user's identity will be revealed, if the auditor follows the proofs to trace the ORs one by one.
+
+Next, we will show that,
+   \emph{a}) nobody can forge such a chain of proofs, except the A-Tor user and ORs
+            involved in the accountable-anonymous communications,
+    and   \emph{b}) the ORs cannot misguide the auditor to unrelated ORs, either intentionally or unintentionally.
+
+All proofs are signed messages, so nobody can forge these proofs unless a private key was compromised.
+In particular,
+  in the trace path to reveal the user's identity,
+   the exit node is located by the IP address of packets.
+The anonymous-certificate requests are signed by the ORs one by one in the anon-cert Tor circuit,
+and $ACertReq_1$ is sent along with $cred$, which is also verifiable and unforgeable.
+
+
+When $OR_i$ decrypts $ACertReq_{i+1}$ from $ACertReq_{i}$,
+ a malicious OR might present an unrelated anonymous-certificate request signed by $OR_k$,
+    but output $ACertReq_{i+1}$.
+Note that, the private key of $OR_i$ is not disclosed to the auditor.
+Then, the auditor mistakenly traces $OR_k$ instead,
+  and $OR_k$ will be unable to present valid certificate request messages
+   and be liable for the illegal or malicious packets.
+So
+    the public-key encryption algorithm  must be deterministic but not probabilistic,
+    and the auditor needs to check whether the plaintext and the ciphertext match or not.
+
+If a probabilistic public-key encryption algorithm is adopted,
+    $ACertReq_{i}$ is revised to
+        $ID^{OR}_i || Enc_{K_i}[ID^c_i, ACertReq_{i+1}] || H(K_i) || Enc_{PK_i}[K_i]$ and signed by $OR_{i-1}$,
+    where $H()$ is an one-way hash function and $K_i$ is a session key of symmetric encryption algorithms.
+Therefore, $O_i$ outputs $K_i$,
+     the auditor checks whether $K_i$ and $H(K_i)$ match or not and then decrypts $ACertReq_{i+1}$ by itself.
+
+
+%commitment scheme
+%If the SafeExit node attempts to halt the audit by hiding  the ACert or the signature of the traffic,
+% it is accounted for the traffic.
+%If $AOR_n$, the issuer of  the ACert,  fails to provide the correct log, it has to afford the responsibility of the inappropriate behaviors as no one else can forge the signature in the ACert.
+%If the audit halts at $AOR_j$ ($1<j<n$), the signature logged by $AOR_{j+1}$ is used for accountability as others can never forge it.
+%If any AOR refuses to provide the correct symmetric key or provides the incorrect one which can be found using the corresponding digest value whose integrity is ensured by the signature from the previous node,
+% the corresponding AOR will be the one to afford the responsibility.
+
+%In the weak audit, the auditor finds the IP address of the initiator. % of the traffic.
+%Although the IP address is insufficient, it can be used in the further investigation. % with the help of the ISP.
+
+%In the strong audit, the node identified in the audit is indeed the initiator of the Tor traffic.
+% The signature of Tor traffic ensures that only the one who owns the private key corresponding to the public key in the ACert, can construct the message.
+%The applier of ACert is the only node that assumed to know the private key.
+%The signature of the $ACertReq_1$ ensures that it's the user identified in the audit who applies  ACert as no one else has the private key to sign $ACertReq_1$.
+%Moreover, the nonce can prevent  the  relay attack. %the others performing
+
+
+%In SafeExit, the adversary can never hide its identifier to the auditor.
+%The adversary may adopt other anonymity networks before performing the SafeExit protocol,
+%for example, it may require an exit node of Tor to perform as a user of SafeExit, attempting to end the auditor's tracing at the exit node.
+%However, it  never happens  in SafeExit, as the SafeExit node participates in the construction of the SafeExit tunnel.
+%which avoids the user adopting another Tor tunnel to hide its identifier.
+%CE is the intersection of the TE chains from the user and the SafeExit node,
+% it extends the chain of TEs trusted by the SafeExit node to $TE_{user}$,
+ % who ensures the user of SafeExit  never be the nodes of anonymity networks (e.g., the exit nodes in Tor).
+
+
+\subsection{Performance Evaluation}
+++++++++++
+We evaluated the performance overhead introduced by the  SafeExit extension, % was deployed, %for protecting the exit nodes in SafeExit,
+ by measuring the average processing time for the user to apply  ACert and generate the signature of Tor traffic,  the SafeExit node to verify the signatures, and the AORs to generate and reply the ACert.
+ The time for message transmitting wasn't considered due to the variety of network.
+
+\begin{figure}[bt]
+\begin{minipage}[t]{0.5\linewidth}
+\centering
+  \includegraphics[width=6cm]{pic/User.pdf}
+\end{minipage}%
+\begin{minipage}[t]{0.5\linewidth}
+\centering
+  \includegraphics[width=6cm]{pic/AOR.pdf}
+\end{minipage}
+ \caption{Performance overhead of transmitting transaction data  in SafeExit.}\label{pic:eval}
+\end{figure}
+
+++++++usually RSA 2048? How about tor+++++++
+we shall compare with original Tor.
+
+We adopt 4096 bits RSA in OpenSSL v1.01f for the public key encryption and signature generation, 128 bit AES for symmetric encryption, and SHA-1 for digest generation.
+The process in each node is implemented using C++.
+All experiments ran with $n$ AORs, one user and one SafeExit node.
+These nodes were deployed on the identical workstations with an Intel i7-3770 (3.4 GHz)
+CPU and 12GB of memory.
+The operating systems of all the nodes are CentOS v6.6.
+We measured the average processing time by applying the ACert and sending a Tor cell $100$ times.
+
+
+
+To apply the ACert, the user has to perform $n$ public key encryption, $n$ symmetric encryption and $n$ digest calculation  in the weak audit and one more signature generation in the strong audit.
+To process the request, each AOR (except $AOR_1$ in the weak audit) has to perform one signature verification, one private key decryption, one symmetric decryption and one signature generation, while $AOR_1$ in the weak audit doesn't need to do the signature verification.
+We refer the processing time at the user as $CertReq_u$, and the time for total AORs as $CertReq_{AORs}$.
+From Figure~\ref{pic:eval}, we find both  $CertReq_u$ and $CertReq_{AORs}$ increases with $n$,
+ and are less than $13.28$ms and $387.76$ms respectively when $n \leq 20$.
+%doesn't increase with $n$ and is about
+% $0.801$s  which can be reduced to less than $21.224$ms when the user adopts the pre-generated public key pair and $n \leq 20$.
+% $CertReq_{AORs}$ increases with $n$, and is less than $2.111$s when $n \leq 20$.
+ %  We find that the overhead for applying  is tolerable as the ACert can be used in multiple Tor streams. % compared to the network delay (about $1.9$ ms in the Ethernet.
+
+To reply the ACert to the user,  $AOR_n$ has to do two public key encryption, while each other AOR has to perform one private key decryption and one public key encryption in both the weak  and strong audit. The user has to do two private key decryption to obtain the ACert.
+We denote the processing time  needed at the user as $Reply_u$, and the time for total AORs as $Reply_{AORs}$.
+As shown in Figure~\ref{pic:eval}, both the $Reply_u$ and $Reply_{AORs}$ are modest.
+
+
+After obtaining the ACert, the user begins to send the transaction data.
+In Tor, the traffic is split  into cells of $512$ bytes, while the size of transaction data in each cell is at most $498$ bytes.
+In SafeExit, we need to split the signature ($512$ bytes) of the transaction data into 2 cells.
+When the user needs to send $n$ messages,
+it has to perform $n$ digest calculations and one signature generation (the time denoted as $T_{User}$)  while the SafeExit node needs to perform one signature verification and $n$ digest calculations(the time denoted as $T_{SafeExitNode}$).
+%is at most $9.604 ms$ when $n \leq 20$)
+% is less than $0.111 ms$ when $n \leq 20$
+From Figure~\ref{pic:comm}, we find that the overhead is tolerable, as $T_{User} \leq 9.62$ms and $T_{SafeExitNode} \leq 0.14$ms when $n \leq 20$.
+
+
+
+
+
+\begin{figure}[bt]
+\centering
+  \includegraphics[width=6cm]{pic/SafeExit.pdf}
+ \caption{Performance overhead of ACert generation in SafeExit.}\label{pic:comm}
+\end{figure}
+
+
+\section{Extended Discussion}
+\label{sec:extended-discussion}
+This section presents some extended discussions about A-Tor.
+
+\subsection{Credential of the User's Identity}
+In Section \ref{subsec:certificate},
+  we assume that the A-Tor user has an identity credential verifiable to the registration node.
+In order to provide such verifiable proofs,
+ the A-Tor user has to own an non-anonymous X.509 certificate to sign a credential,
+    or some ISPs provides some additional proofs to prove this.
+In fact, since IP addresses can be forged, so an additional trusted party is needed to persuade the registration node
+    (e.g., the certification authority certifying the IP address, or the ISP).
+
+%We use weak and strong audit to denote the case where the selected SafeExit node specifies weak and strong audit
+% as the exit policy respectively.
+%In the weak audit case, the auditor can only find the IP address of the initiator,
+%while in strong audit case, the unique identifier of the SafeExit user is revealed in the audit.
+
+%%
+%%To achieve this, the user needs a X.509 certificate to bind its identifer with its public key $PK_u$.
+
+%%The generation of ACert in the strong audit is similar as in the weak audit. The only differences are as follows:
+%\begin{itemize}
+%  \item The user sends $[ACertReq_1]_{SK_u}$ instead of $[ACertReq_1]$  to the $AOR_1$.
+%  \item The $AOR_1$ verifies the signature using the public key in the user's certificate before processing $[ACertReq_1]$,
+% and logs $[ACertReq_1]_{SK_u}$ instead of $[ACertReq_1]$.
+%  \item The $type$ values in the transmitted messages and the ACert are set as $1$.
+%\end{itemize}
+%
+%
+%%For the SafeExit who specifies the weak audit as the exit policy, the user has to apply for the ACert where $type=0$.
+%In weak audit,
+%after the Tor tunnel established,
+% the user performs as follows:
+%
+%1. It chooses at least two AORs to construct an AOR circuit.
+%  Without loss of generality, we assume the AOR circuit is  $<AOR_1$, $AOR_2$, ..., $AOR_n>$. %in form of
+%
+%2. Then, it constructs the audit certificate request (denoted as ACertReq) for each selected AOR recursively.
+%   The ACertReq for $AOR_n$ is $ACertReq_n$ = $[nonce_n,$ $time_s,$ $time_e,$ $PubKey_s$, $PK_u$$]_{K_n} || H(K_n) || [K_n]_{PK_{AOR_n}}$,
+%    while the one for $AOR_{i}$ ($1 \leq i < n$) is $ACertReq_i$ = $[ID_{AOR_{i+1}},$ $nonce_{i},$ $ACertReq_{i+1}$$]_{K_i}$ $ || H(K_i)$ $ || [K_i]_{PK_{AOR_i}}$.
+%    The $nonce$ contained in each $ACertReq$ is a random value used to randomize $ACertReq$,
+%    and $K_i$ ($1 \leq i < n$) is the randomly chosen symmetric  key.
+%
+%3. Finally, it sends $[ACertReq_1]$ to the $AOR_1$.
+%
+%$AOR_1$ extracts $K_1$ using $SK_{AOR_1}$ and decrypts the first part of $ACertReq_1$ with $K_1$ for $ID_{AOR_2}$ and $ACertReq_{2}$,
+% chooses a random value $nonce_{AOR_1}$, then sends $[nonce_{AOR_1}$, $type$, $ACertReq_{2}$$]_{SK_1}$ to $AOR_2$, where $type$ is set as $0$  for the $AOR_n$ to specify the type of the ACert.
+%After that, it records the user's IP address with $<[ACertReq_1], nonce_{AOR_1}>$ in its log.
+%
+%$AOR_{j}$ ($1 < j < n$) checks the signature  $[nonce_{AOR_{j-1}}$, $type$, $ACertReq_{j}$$]_{SK_{j-1}}$,
+% and decrypts $ACertReq_{j}$ for $ID_{AOR_{j+1}}$ and $ACertReq_{{j+1}}$ when the signature is correct.
+%Then, it sends $[nonce_{AOR_j}$, $type$, $ACertReq_{j+1}$$]_{SK_j}$ to $AOR_{j+1}$ where $nonce_{AOR_j}$ is a random value.
+%Finally, it logs the $ID_{AOR_{j-1}}$ with the pair $<[nonce_{AOR_{j-1}}$, $type$, $ACertReq_{j}$ $]_{SK_{j-1}}$, $nonce_{AOR_j}>$.
+%
+%$AOR_{n}$ is the AOR chosen by the user to issue the ACert.
+% After verifying the signature in $[nonce_{AOR_{n-1}}$, $type$, $ACertReq_{n}$$]_{SK_{n-1}}$,
+%  it extracts $K_1$ and $H(K_1)$, decrypts the first part of $ACertReq_{n}$ for $[nonce_n,$ $time_s,$ $time_e,$ $PubKey_s,$ $PK_u]$,
+%   selects the sequence number as $seq$ which is monotonically increasing,
+%    and calculates the signature of $[seq,$ $type,$  $ID_{AOR_{n}},$ $PubKey_s,$ $time_s,$ $time_e]$ to generate  ACert.
+%Then, it logs the ACert, $ID_{AOR_{n-1}}$ with the received $[nonce_{AOR_{n-1}}$, $type$, $ACertReq_{n}$$]_{SK_{n-1}}$.
+%
+%
+%The ACert is returned to the user through the AORs.
+%$AOR_n$ %encrypts the ACert with the $nonce_{AOR_{n-1}}$ using $PK_{AOR_{n-1}}$,  and
+%sends  $AOR_{n-1}$ $[nonce_{AOR_{n-1}}, [nonce_n, ACert]_{PK_u}]_{PK_{AOR_{n-1}}}$.
+%$AOR_{j}$ ($1 < j < n$) decrypts the received ciphertext, uses $nonce_{AOR_{j}}$ to retrieve its log for $nonce_{AOR_{j-1}}$ and $ID_{AOR_{j-1}}$,
+% then sends $[nonce_{AOR_{j-1}}, [nonce_n, ACert]_{PK_u}]_{PK_{AOR_{j-1}}}$ to $AOR_{j-1}$.
+%After decrypting the message from $AOR_2$,
+%  $AOR_1$ finds  the user's IP address and $nonce_{1}$  from its log with $nonce_{AOR_1}$, % $[nonce_n, ACert]_{PK_u}$ and
+%   and sends $[nonce_1, [nonce_n, ACert]_{PK_u}]_{PK_{u}}$ to the user who decrypts the message for ACert.
+%
+%The user checks the correctness of the received message before accepting the ACert.
+%It compares the elements (i.e., $nonce_1$, $nonce_n$, $time_s,$ $time_e,$ $PubKey_s$ and $ID_{AOR_s}$) in the message with the ACertReq,
+% checks the type of the ACert,
+% and verifies the signature of ACert using the public key of $AOR_n$.
+%Only when all the checks pass, the user uses the ACert in the Tor communication.
+%
+%We provide a sample process for audit certificate generation in Figure~\ref{pic:acert}.
+% The user wraps $ACertReq_2$ in $ACertReq_1$, which ensures that the audit certificate request must be transmitted through the $AOR_1$ to $AOR_2$,
+%  thus the $AOR_2$ never finds the user. %can get the plaintext of the request and
+%The ACert is encrypted with a secret random value using the user's public key,
+% which ensures that the $AOR_1$ never knows the ACert.
+%
+
+%%% \begin{figure}[bt]
+%%%%  \centering
+  % Requires \usepackage{graphicx}
+%  \includegraphics[width=7cm]{pic/TORpic.pdf}\\
+%  \caption{A sample audit certificate generation  process in SafeExit.}\label{pic:acert}
+%\end{figure}
+
+
+%During the audit certificate generation, there are some exceptions needed to handle.
+%When each AOR finds the signature in the received message incorrect,
+% it replies $invalidSig$ to the sender and closes the connection. % once the timer expires before receiving the correct signature.
+%To ensure the liveness of the process, each user predefines a threshold after sending the ACertReq.
+%If the timer expires before getting the correct ACert, it regenerates the key pair and chooses another set of AORs for the ACert.
+
+\subsection{Trusted Certification Node}
+
+In the original protocol,
+  the exit node trusts the certification node unconditionally.
+However,
+  maybe only a limited list of ORs are trusted as certification nodes by an exit node.
+So,
+  the directory servers may maintain a list of trusted certification nodes for each exit node.
+Or
+  the A-Tor firstly constructs the anon-comm Tor circuit and receives the trust list from the exit node,
+  and then constructs the anon-cert Tor circuit to apply for the certificate.
+If the exit node does not want to publish this information in public.
+
+Then,
+  an A-Tor needs to apply for the anonymous certificate from specified certification nodes,
+  after it chooses the exit node.
+Note that,
+  in this case,
+  a greater $m$ is recommended,
+  because the certification node and the exit node have greater probability to collude
+  (they have trust relationship already).
+
+%All ORs are trusted.
+%Trust list of exit nodes, are listed in the directory server.
+
+%First, the anon-comm Tor circuit, get the trust list.
+%Then, the anon-cert Tor circuit, to apply the certificate.
+
+
+\subsection{Signature in the Anonymous Communication}
+%In Tor, the traffic is split  into $512$ bytes cells, while the size of transaction data in each cell is at most $498$ bytes.
+
+The signature can be signed and stored selectively and randomly.
+Some data in the attack traffic is enough.
+
+Sign each packet in the anonymous communication,
+  is very expensive.
+
+Some coarse-grained verification could be finished as follows.
+For example,
+  only sign the metadata of the communication.
+
+Or, the A-Tor keeps sending  packets, until the exit node sends a command.
+Then the A-Tor signs all the sent but unsigned packets.
+The granularity is decided by the exit node.
+
+%Binding the signature for each transmitted message will introduce significant performance overhead.
+%To improve the performance, the user may perform as follows:
+%is at most $9.604 ms$ when $n \leq 20$)
+% is less than $0.111 ms$ when $n \leq 20$
+%%\begin{itemize}
+%%%  \item When the user needs to send a set of messages $\{m_1, m_2, ..., m_n\}$, it calculates the digest ($H(m_i)$) for each message $i$ ($1 \leq i \leq n)$.
+%%%  \item The user sends $\{H(m_1), H(m_2), ..., H(m_n)\}$ and the signature of it through the Tor tunnel to the SafeExit node.
+%%%  \item After verifying  the correctness of the received signature, the SafeExit node stores $\{H(m_1), H(m_2), ..., H(m_n)\}$.
+%%%  \item For the following message $m_i$ ($1 \leq i \leq n)$, the SafeExit node compares the calculated digest of $m_i$ with the stored one.
+%%%   If the two are consistent, it relays $m_i$ to the destination.
+%%%\end{itemize}
+
+
+
+About signature of exit node.
+only about some meta info about his visit.
+{TCP, port, length, data, duration, time, web page}
+
+It depends on the policy of the exit node.
+

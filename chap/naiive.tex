@@ -1,0 +1,108 @@
+\section{ A Naive Protocol}
+\label{sec:naiive}
+To make the description easy to understand, we introduce a naive protocol to protect the exit nodes in Tor.
+In this version, we weaken the security model by assuming that all TEs are honest and never collude with others.
+
+\subsection{Protocol}
+%This naive solution involves a regular user node, a Tor tunnel with a SafeExit node as the exit node, and a single TE.
+After the user has invoked Tor to establish a regular Tor tunnel to the SafeExit node,
+ it chooses a TE from the candidate returned by the SafeExit node,
+    generates an asymmetric key pair, and requires the TE to generate a signature for the public key.
+Then, the user sends the public key with the TE's signature to the SafeExit node,
+ and signs the traffic using the corresponding private key before sending it to the SafeExit node.
+The SafeExit node verifies the signature of the public key  to ensure the user has registered the public key at the TE,
+ and checks the correctness of the signature for the traffic which proves that the traffic is sent from a Tor user.
+Once both the verification completed, the SafeExit node relays the user's traffic to the destination.
+Figure~\ref{pic:naiive-protocol} shows the detailed protocol.
+
+
+\begin{figure}[bt]
+  \centering
+  % Requires \usepackage{graphicx}
+  \includegraphics[width=8cm]{pic/naiive-certificate-acquisition.pdf}\\
+  \caption{The naive  protocol.}\label{pic:naiive-protocol}
+\end{figure}
+
+1. Once the Tor tunnel has been established,
+ the SafeExit node returns the list of its trusted TEs to the user in the form of $[\{TE_1,TE_2,...\}]$.
+% where $List$ is the command. %, and the list of TEs is terminated with $Null$.\footnote{The SafeExit node may encrypt this message with negotiated AES key and send it together with the message in the Diffie-Hellman key agreement protocol.}
+
+2. The user selects one  TE ($ID_{TE}$) from the list, generates an asymmetric key pair ($PubKey_s$ as the public key and $PriKey_s$ as the private key),
+  and sends $[SID, ID_{SafeExit}, PubKey_s]$ to the TE,
+  where $SID$ is a random value to prevent the replay attack, % the identifier of the stream between the user and the SafeExit node, %
+   and $ID_{SafeExit}$ refers to the identifier of the SafeExit node.
+  The whole message is encrypted using the public key ($TE_{pub}$) of $ID_{TE}$.
+
+3. The chosen TE returns the signature ($sig$) of [$PubKey_s$, $SID$] to the user, and logs $PubKey_s$ with the identifier (e.g., the IP address) of the user.
+
+4. The user then sends [$PubKey_s$, $SID$, $sig$, $ID_{TE}$] to the SafeExit node.
+
+5. The SafeExit node checks the signature of [$PubKey_s$, $SID$] using $TE_{pub}$.
+   It returns $ok$ if the signature is valid and logs [$PubKey_s$, $SID$, $sig$, $ID_{TE}$].
+
+6. To send $data$ to the destination,
+ the user signs $data$ ($SIGN_{PriKey_s}(data)$)
+  and sends [$data$, $SIGN_{PriKey_s}(data)$] through the Tor tunnel.
+
+7. The ORs except the SafeExit node process the received  message in the same way as in Tor.
+   The SafeExit node retrieves $PubKey_s$ for $SID$, and uses it to verify $SIGN_{PriKey_s}(data)$.
+   Only when the verification succeeds, the SafeExit node relays the $data$ to the destination and logs [$data$, $SIGN_{PriKey_s}(data)$].
+
+8. Once the destination finds the traffic from some SafeExit node illegal,
+ the SafeExit node can use the stored information ([$PubKey_s$, $SID$, $sig$, $ID_{TE}$] and [$data$, $SIGN_{PriKey_s}(data)$]) to prove that the relayed  messages are from a Tor user.
+With the log from the TE, the audit can identify the malicious user.
+
+
+
+%∏˜÷÷“Ï≥£
+To make the protocol complete, here are some exceptions to handle.
+Firstly, if all the TEs in the list from the SafeExit node are not trusted by the user, the user has to construct the Tor tunnel with another SafeExit node and restarts the protocol.
+Secondly, if the user finds the the signature for [$PubKey_s$, $SID$] from the TE is invalid, it returns to Step 2 for another TE.
+Thirdly, if the SafeExit node returns that the signature for [$PubKey_s$, $SID$] is invalid,
+ the user will choose another SafeExit node and restart the protocol from Step 1.
+Moreover, to avoid the users hide the identifiers from the TE by adopting Tor to establish the link with TE,
+ each TE adds all the exit nodes to its blacklist and refuses the connection from any node in the blacklist.
+If the user is in the blacklist of the chosen TE, the TE replies $[badUser]$,
+ which makes the user  back to Step 2 to choose another TE to continue the protocol.
+
+\subsection{Security Analysis}
+\label{subsec:naivesecurity}
+\vspace{-1mm}
+%In this section, we briefly analyze the security of the naive version of SafeExit.
+
+When the TE is trusted, SafeExit doesn't degrade the anonymity provided by Tor.
+Firstly, the communication between the user and the SafeExit node is through the standard Tor tunnel,
+ the only modification in this tunnel is in the pattern of the transmitted messages.
+ In SafeExit, there is a signature in each message and only the SafeExit node finds the plain text of the signatures.
+ As the exit node in Tor knows the activities of the user, exposing the messages' signatures to the SafeExit node doesn't increase the knowledge of the nodes.
+Secondly, there is no communication between the TE and the exit nodes, which never harms the anonymity.
+Thirdly, the communication between the user and the TE is encrypted with the public key of each other,
+  eavesdroppers can never obtain the plaintext of the transmitted messages to link the [$PubKey_s$, $SID$, $sig$, $ID_{TE}$] with the identity of the user.
+However, in SafeExit, except the first OR as in Tor, TE also knows the user's identifier.
+As the TE is trusted, the attackers cannot link the user's activities with its identifier to harm the anonymity.
+
+
+Malicious SafeExit node does not harm the effectiveness of SafeExit.
+The SafeExit nodes have no $TE_{pri}$ to forge valid signature of [$PubKey_s$, $SID$], nor $PriKey_s$ for correct signatures of the $data$, so they can never forge the user's messages.
+SafeExit nodes cannot invoke the audit illegally, as they need TE's cooperation to unmask the user's identity,
+ while the TE is supposed to ensure the audit performed correctly.
+
+%Malicious SafeExit node may try to find the profile of the users by providing different list of TEs in the Certificate Acquirement process, however, the user will directly choose another SafeExit node once it finds no TE in the list is trusted.
+
+
+However, curious TEs harm the anonymity provided by this naive version. % of SafeExit.
+Each TE (curious or not) can link each user with the corresponding exit node without knowing the user's activities,
+ which is a breach in anonymity.
+It can even find the relationship between the user's identity and activities by colluding with malicious SafeExit nodes.
+Moreover, malicious TEs may collude with any SafeExit to forge the user's messages,
+as malicious TEs may generate [$PubKey_s$, $SID$, $PriKey_s$] and log it with the identifier of a victim, while the SafeExit node  may log the illegal data with the corresponding signature using $PriKey_s$, which makes the auditor believe that the illegal activities is initiated by the victim.
+
+
+%After the analysis, we find that
+This naive protocol fails to ensure the user's anonymity nor provide the complete proof for the auditor to find the originator of the illegal activities, under the threat model described in Section~\ref{sec:systemmodel}.
+In the following section, we provide an improved protocol.
+To distinguish the two versions, we refer SafeExit as the following correct version  while  the naive version for this simple (but incorrect) protocol throughout the rest of the paper.
+
+
+
+

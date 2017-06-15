@@ -1,0 +1,160 @@
+\section{Background and Related Work ++++}
+\label{sec:background}
+
+\subsection{Tor and Anonymity Network}
+Existing anonymity networks can be classified into two classes: the high-latency design and the low-latency design.
+The high-latency design~\cite{gulcu1996mixing,moller2003mixmaster,danezis2003mixminion}
+ aims to resist global adversaries and maximize anonymity at the cost of high latency using batching and public key encryption.
+The low-latency design~\cite{dingledine2004tor,katti2007information,le2013towards} %,Dissent,freedman2002tarzan,landsiedel2007dynamic,sherwood2002p
+ is more practical, as it provides anonymity for interactive services. % (e.g., SSH connections and web browsing).
+However, some low-latency schemes~\cite{le2013towards} provide  limited anonymity, % for users, Dissent,freedman2002tarzan,sherwood2002p,
+while others~\cite{dingledine2004tor,katti2007information} suffer the traffic analysis attack.
+%global adversaries who can monitor the whole network traffic, may use timing attack to reduce the anonymity of the low-latency design,
+ %or even link the identifer of the user with its activity.
+ % Anonymizer~\cite{boyan1997anonymizer}, PipeNet~\cite{dai1996pipenet}, MIXes~\cite{berthold2001web},
+%最新研究成果 Recently,
+%Beside to the above anonymity networks,
+
+ Riposte~\cite{Riposte} is proposed recently to provide excellent anonymity, %immune to the traffic analysis attack, % and DoS attack.
+%It adopts  private information retrieval and secure multi-party computation;
+ %which need further improvement for practical deployment,
+ but it may be not suitable for the interactive services  due to the large computation cost.
+%However, due to the heavy cost of private information retrieval and secure multi-party computation, it cannot be deployed in the interactive service.
+%分析了trade off between the performance and traffic analysis attack
+Through the analysis on Freedom~\cite{goldberg1999freedom} and PipeNet~\cite{dai1996pipenet},~\cite{back2001traffic} proposes that an anonymity system should balance the trade-off between the performance and provided anonymity (specifically immunity to the traffic analysis attack).
+
+
+
+
+%In this section, we introduce Tor and provide the related works on the anonymity network.
+
+%\subsection{Background}
+
+Tor is a circuit-based low-latency anonymous communication service, and is the most popular anonymity network today~\cite{elahi2014privex}.
+It provides a reasonable tradeoff between anonymity, usability and efficiency,
+and is easy to deploy as it requires no special privileges or kernel modifications, and needs little synchronization or coordination between nodes.
+
+
+%Tor anonymizes TCP-based applications based on Onion Routing, a distributed overlay network.
+%In tor, the users selected some nodes to construct a path (called circuit) through the network.
+% in which each node (called onion router or OR) knows its predecessor and successor, but no other nodes
+There are four types of nodes in Tor: users, onion routers, exit nodes and directory servers.
+An onion router (OR) is the node who relays the traffic from its predecessor (i.e., an onion router or the user)
+to the successor (i.e., another onion router or the destination).
+The exit node is a particular type of onion routers, who is responsible for transmitting users' traffic to the destination.
+The directory servers are the trusted nodes who provide verifiable directories describing the information (e.g., public key, address, bandwidth and exit policy) of each known router.
+Each user refers to the directory server to select a set of onion routers,
+ and constructs a path (called circuit) to the destination.
+Each onion router in the circuit only knows the identifier of its predecessor and successor.
+Moreover, the user negotiates a symmetric key with each OR on the circuit,
+ and sends the messages using the keys in order, which ensures only the first OR knows the user while the last OR knows its activity.
+%\begin{figure}[b]
+%  \centering
+  % Requires \usepackage{graphicx}
+%  \includegraphics[width=8cm]{pic/TORpic.pdf}\\
+ % \caption{An example of communication using Tor.}\label{tor-protocol}
+%\end{figure}
+%Figure~\ref{tor-protocol} shows how a user builds a circuit of two routers and communicates with the destination.
+%Firstly, the user establishes a TLS connection with OR1 and requires OR1 to open a TLS connection with OR2,
+% which provides perfect forward secrecy and prevents an attacker  modifying the data or impersonating an OR~\cite{dingledine2004tor}.
+%Before communicating with the destination,
+% the user constructs a circuit incrementally and negotiates a symmetric key with each OR on the circuit.
+%Diffie-Hellman key agreement protocol~\cite{diffie1976new} is adopted to generate a symmetric key ($K_1$) between the user with OR1:
+%firstly, the user randomly chooses $x_1$ and encrypts $g^{x_1}$ with the public key of OR1;
+%secondly, on receiving the encrypted $g^{x_1}$, OR1 decrypts it with the private key, chooses $y_1$ randomly,
+%  calculates $K_1=g^{x_1y_1}$, and returns $g^{y_1}$ with the hash value of $K_1$ to the user;
+%finally, the user  calculates $K_1$ the same as OR1.
+%After that, the user extends the circuit to OR2 and negotiates a symmetric key ($K_2$) with OR2.
+%The messages between the user and OR2 are relayed by OR1,
+% ensuring that OR2 doesn't know that it's communicating with the user.
+%After the circuit has been built,
+%the user splits its traffic into fixed-size cells,
+%  encrypts the cells using the shared keys with OR2 and OR1 in order, % firstly, and encrypts the cipher with the shared key with OR1.
+%   and sends the cipher to OR1.
+%OR1 decrypts the received messages and relays it to OR2 who sends the plain to the destination.
+%From the process, we can find that only OR1 knows the user's identifier, while only OR2 knows its activities,
+% which unlinks the user's identifier with its activities.
+%\subsection{Related work}
+%\label{subsec:relatedwork}
+%介绍匿名通信的分类及不同种类的优缺点（低延迟（TOR）、高延迟）
+%被动攻击
+
+
+Global adversaries who can monitor the whole network traffic break the anonymity of Tor~\cite{TrafficAnalysisMixes} by observing the pattern of the traffic.
+The adversaries with only a partial view of the network, may break the user's anonymity by adding the timing pattern to the traffic~\cite{AnalysisofTor}.
+~\cite{Locating} provides several attacks that reveal the location of a hidden server and provides the  countermeasures which can also be used in SafeExit.
+ %The work~\cite{syverson2001towards} analyze the security of Tor.
+The work~\cite{barker2011using} demonstrates that the Tor traffic can be distinguished from the regular encrypted traffic.
+As pointed in~\cite{Throttling}, the difficulties of the traffic analysis attacks~\cite{LongPaths,latencyleak,ConnectionBased} are increased with the wide deployment of Tor.
+% for example, when each relay simultaneously services multiple circuits.
+%主动攻击
+%CellFlood~\cite{barbera2013cellflood} considers the active attacks on Tor. % and provides the corresponding protection.
+%In the establishment of the Tor tunnel, the user encrypts the messages using the public key of the onion router who decrypts the messages using the private key. The cost of private key operation is larger than public key operation,
+CellFlood~\cite{barbera2013cellflood} constructs an effective denial-of-service (DoS) attack to Tor.
+The attack is mitigated by adopting a client puzzle protocol~\cite{dean2001using}, %in which the onion routers process the tunnel creation request only after the user has performed some computationally intensive work. The client puzzle protocol .
+which is compatible with SafeExit.
+
+The damages caused by the malicious onion routers are also considered.
+Tor allows the onion router to report its bandwidth for load-balancing % to the directory server
+ which introduces a low-resource attack~\cite{bauer2007low}.
+ Malicious onion routers may misreport the bandwidth to capture more traffic.
+An opportunistic bandwidth measurement mechanism~\cite{snader2008tune}  prevents this attack. %is proposed to
+%攻击成功实例：
+%Beside the attacks, we should consider the damage caused by the incorrect use of Tor.
+As shown in~\cite{theregister}, the abuse of Tor may break  the users' anonymity. % to the exit nodes.
+%Through the analysis in
+\cite{chaabane2010digging} finds that some users abuse the exit nodes in Tor as 1-hop proxies which harms the anonymity. %by adopting
+
+%介绍匿名网络与其他应用的结合
+%Different applications are attempting to integrate with Tor.
+%The work~\cite{rizal2013empirical} investigated the quality of service (latency, jitter and packet loss) when Tor is adopted to provide the privacy in VoIP.
+%The possibility that the user employ Tor to access Bitcion network is evaluated in~\cite{bitcion}.
+%Moreover, PrivEx~\cite{PrivEx} proposes a mechanism to collect the client statistics in Tor without harming the anonymity.
+
+\subsection{Accountable Anonymity and Revocable Anonymity}
+
+
+\cite{syverson2000onion,dingledine2004tor} provide a mechanism for each node to limit the relayed traffic.
+That is,
+ each node may specify \emph{exit policy} to describe the addresses and ports  the node will connect to;
+ the exit node can use port restrictions to support certain services (e.g., HTTP, SSH and FTP).
+However, it does not provide a complete protection for exit nodes, as most of the abuse cases are based on the supported, popular protocols.
+\cite{dingledine2004tor} allows each node to add specific information in the header of the forwarded messages,
+ to indicate that the traffic is originated from some users of the anonymity service.
+%which needs a modification of the destinated applications.
+However, the auditor cannot distinguish whether the traffic was truly originated from an anonymized user, or from a malicious exit node, which added fake header attributes to its own messages.
+\cite{netresec} adopts statistical protocol detection to  detect the Tor traffic. However, the exit node could never distinguish the normal and illegal Tor traffic.
+Last, a reputation system could be used to prevent the malicious clients from using Tor~\cite{MIPRO}, however it relies on the exit nodes to analyze the traffic, which introduces a significant overhead to the exit node and is infeasible when the user's traffic is encrypted.
+
+
+The scheme~\cite{kopsell2006revocable} provides the accountable anonymity by linking the pseudonym with encrypted identity, and \cite{xu2012accountable} is a newly designed anonymity scheme based on the proxy re-encryption scheme.
+These two schemes are hardly to be deployed as they fail to be integrated with the widely used Tor.
+
+
+To protect the exit nodes, different accountable anonymity scheme have been proposed based on a trusted third party.
+%需要可信第三方签发ticket（ticket=公钥的签名，第三方不知道公钥，因为采用了盲签名），用户发送消息时带上ticket和对时间戳的签名
+\cite{claessens2003revocable} requires a trusted party to generate a fair blind signature as the ticket for the initiator to access the anonymity network, and the anonymity of the initiator is revoked with the ticket and the trusted party.
+%initiator发送消息m之前，进行秘密分享，构造[hash(secret1), hash(secret2), .... , hash(secretn), hash(m)]， DS对其进行签名，并将secert发给n个Tor node
+%exit node发送消息之前，会验证上述签名
+In \cite{kane2015revocable}, to transmit the message $m$, the initiator sends the hash value of $m$ with the secret shares of the IP address to the directory server, which distributes the shares to the Tor nodes and generates the signature of the hash value of $m$. When the revocation is needed, the shares from the Tor nodes are used to recover the initiator's IP address.
+These two schemes degrade the provided anonimiy, as the trusted third party or the directory server may collude with the exit node to break the users' anonymity.
+
+New accountable anonymity scheme are designed which fail to integrate with the Tor.
+%用户对每个发送的消息签名。使用假名通信，假名和真实标识的密文由第三方证书绑定，真实标识由(k,n) proxy re-encryption加密，需要撤销签名时，由多个实体re-encry
+\cite{kopsell2006revocable} allows the initiator to communicate with others anonymously using a pseudonym, which is linked to the encryption of the real identity by a certificate issued by a third party.
+The real identity is encrypted using a threshold atomic proxy re-encryption scheme, and the  public key is generated by a set of anonymisers, who  jointly proxy re-encrypt the initiator's identity  to the public key  of the law enforcement agency when revocation is necessary.
+%initiator 志愿保证 accountability，否则destination无法正确解密消息
+%destination无法诬陷，但是其合谋是可以诬陷的。
+\cite{xu2012accountable} provides accountable anonymity and non-frameability based on a proxy re-encryption cryptosystem.
+In the join phrase, the initiator gets the value $t$ from a trusted third party (called key generator) without leaking the identifier, while the register database who knows the initiator's identifier, gets $g^{pt/r}$ where $p$ is known only by the key generator and $r$ is the private key of the initiator.
+To communicate with the destination, the initiator calculates $C_{0}=\{g^{rk/t}, mZ^k\}$ with randomly chosen $k$, distributes the random values $\{x_i, y_i\}$ to the corresponding intermediate node in the transmit path of $n$ nodes, and sends $g^{tr_2/r}$ with $\{\sum_{i=1}^{n}{x_i}, \sum_{i=1}^{n}{y_i}\}$ to the destination whose public key is $g^{r_2}$. On receiving the message in form of $\{L, R\}$ from the previous node, intermediate node $i$ sends $\{L^{x_i}, R^{y_i}\}$ to the next one.
+Therefore, only the destination can recover the message $m$. When the destination finds the message invalid, it provides $g^{t/r}$ to the law enforcement agency, who gets $g^{pt/r}$ from the key generator which is used to find the initiator's identity  from the register database.
+%The accountability is obtained by the incentive-compatible mechanism, in which the malicious message would not be readable unless the encryption is done in an accountable way.
+
+
+Java Anon Proxy project~\cite{berthold2001web} was forced to add a backdoor by a German court~\cite{germancourt}.
+\cite{netresec} adopts statistical protocol detection to  detect the Tor traffic. However, the exit node could never distinguish the normal and illegal Tor traffic.
+
+
+https://research.torproject.org/techreports/botnet-tr-2013-11-20.pdf
+

@@ -1,0 +1,178 @@
+\section{Introduction}
+\label{sec:introduction}
+%介绍匿名通信的必要性
+Tor is the most popular anonymous communication system in the Internet.
+Anonymity is critical for personal privacy,
+  but the Internet does not provide anonymity by default \cite{elahi2014privex}.
+So several anonymity networks such as Tor~\cite{dingledine2004tor}, Mixminion~\cite{danezis2003mixminion}, Mix-master~\cite{moller2003mixmaster}, and PipeNet~\cite{back2001traffic,dai1996pipenet},
+ are designed and implemented to unlink a communication party from his/her activities.
+Tor balances anonymity, usability and efficiency well,
+  and is deployed all over the world.
+Currently there are more than 2,000,000 Tor users, and the peak number is nearly 6,000,000 in 2013 \cite{tormetric}.
+
+
+%Many users want to communicate with others anonymously,
+% access Internet services without being found,
+%  or freely express their opinions that are different from the authorities'.
+%For example, %a patient wants to access online medical information service without leaking the personal information to others except the doctors,
+% a whistleblower would disclose the evidence of corruption or fraud of the government %to the public
+%  only when she/he could never be identified or found.
+
+
+%Babel~\cite{gulcu1996mixing}, , , , Anonymizer~\cite{boyan1997anonymizer}
+%These systems provide sender anonymity, receiver anonymity, and/or sender-receiver unlinkability by using one trusted node or multiple untrusted nodes to relay the user's traffic to the destination. % (e.g., Internet).
+
+A Tor user chooses a sequence of onion routers (ORs) to construct a circuit,
+ and each OR in the circuit only knows its predecessor and successor.
+Encrypted packets sent by the user are wrapped by a symmetric key at each OR,
+    and the final OR (or the \emph{exit node}) forwards plaintexts IP packet to the destination server.
+Network packets from the destination server
+  are iteratively encrypted by each OR and relayed to the next node,
+   and the Tor user finally decrypts the packets with all symmetric keys.
+
+
+Due to its excellent anonymity and general availability,
+   Tor is misused to launch network attacks~\cite{netresec}.
+As a result, the exit nodes are
+  often accused of the anonymous Tor users' illegal network activities by law enforcement agencies.
+% hence, they may be liable for the heavy legal burden.
+For example, Rapid7 revealed a botnet called SkyNet,
+ which adopts Tor for the command-and-control communications~\cite{Rapid7}.
+Austrian seized computers from the owner running a Tor exit node
+ because cyber crimes are committed through this exit node,
+ and announced that it is illegal to run Tor exit nodes~\cite{TorExit}.
+Moreover,
+  the insufficient protection and possible liability burden of Tor exit nodes discourage volunteer ORs to be exit nodes;
+then,
+  if there are only a very limited number of exit nodes,
+    it becomes easier to associate an anonymous Tor user with his/her network packets
+       by traffic analysis \cite{ConnectionBased,dingledine2004tor}.
+% As a result, the legitimate users may hesitate to adopt the anonymity networks, due to the concerns about the claimed degree of anonymity, which further degrades the provided anonymity.
+
+%Authentication based on IP addresses and IP traceback are ineffective,
+%  as the connections appear to be originated from the exit node~\cite{dingledine2004tor}.
+
+%Moreover, the exit node may be accounted for the illegal messages, %have to  afford the liability,
+% as they fail to provide the proof that they are not the originators of forwarded traffic.
+
+
+
+%介绍匿名通信中Exit Node的问题
+ %各国法律（如德国）对审计的要求
+ %由可信第三方能够将用户的活动与用户标识连接起来，有助于保护Exit node，提高Exit node的参与积极性，更多的exit node有助于提高Tor的匿名性
+
+
+
+%The lack of the proof of the traffic's originators harms the adoption of anonymity network. Firstly,  Secondly, fewer nodes are volunteered to work as exit node due to the  heavy liability burden, which reduces the number of points an adversary needs to monitor for traffic analysis. Therefor, the legal users may refuse to adopt the anonymity networks due to the concern about the claimed degree of anonymity, which further degrades the provided anonymity.
+
+With the original anonymity functionality of Tor,
+  it is extremely difficult for the exit nodes to prove that
+  the IP traffic is originated from other nodes;
+  otherwise,
+   the anonymity will be degraded somehow.
+Some extensions for Tor are proposed to protect the exit nodes, by
+    enforcing exit policies \cite{syverson2000onion, dingledine2004tor} or
+    appending specific packet headers \cite{dingledine2004tor}.
+These extensions offer options for exit nodes and ORs,
+  but such packet headers are not verifiable and cannot disclose the Tor user's identity such as its IP address.
+Trusted third parties are introduced
+\cite{claessens2003revocable,kane2015revocable}
+            to escrow the Tor user's identity before the anonymous communications and
+            revoke the anonymity when necessary;
+however, the extra trust on the third party degrades the anonymity of Tor,
+  because a single compromised party is able to reveal the user's identity.
+A reputation system is designed for exit nodes to rank the anonymous Tor user's activities \cite{MIPRO},
+   and the users with low reputation will be marked.
+This scheme depends on the intrusion-detection capability of exit nodes,
+     and brings a significant overhead to the exit node.
+
+In this paper,
+  we propose \emph{A-Tor}, \emph{accountable anonymity} in Tor, which protects exit nodes
+   with \emph{verifiable proofs} to revoke the anonymity of Tor users.
+A-Tor designs a two-phase protocol.
+In the first phase (called the \emph{anon-cert} phase),
+ an A-Tor user firstly constructs a Tor circuit to apply for an anonymous certificate
+  from the last OR (called the \emph{certification node} in this paper).
+A chain of proofs is generated by the user and the ORs during the application,
+   and these proofs will be used to trace the A-Tor user based on the anonymous certificate.
+Then,
+ in the second phase (called the \emph{anon-comm} phase),
+  a second Tor circuit is constructed to access the destination server,
+ and this certificate is presented as a credential to the exit node;
+  otherwise, the exit node refuses to forward his/her IP packets to the destination.
+The forwarded packets are signed by the anonymous user,
+   and verified by the exit node using the anonymous certificate before sent to the destination server.
+
+In summary, A-Tor achieves accountable (or revocable) anonymity with the following properties:
+%%
+% further degrades the users' confidence of the provided anonymity.
+%Tor:Additionally, building circuits that cross jurisdictions can make legal coercion harder—this phenomenon is commonly called “jurisdictional arbitrage.” The Java Anon Proxy project recently experienced the need for this approach, when a German court forced them to add a backdoor to their nodes [51].
+%But making use of statistical protocol detection, such as the Port Independent Protocol Identification (PIPI) feature provided with CapLoader, is in fact an effective method to detect Tor traffic in your networks.
+%%
+%%
+%Different accountable anonymity schemes~\cite{claessens2003revocable,kopsell2006revocable,xu2012accountable,kane2015revocable} have been proposed to find the originator of the messages. %, based on the blind signature scheme,  proxy re-encryption scheme or secret sharing scheme.
+%However, the schemes~\cite{claessens2003revocable,kane2015revocable} degrades the provided anonymity, as they need a trusted third party who can break the anonymity by colluding with the exit node.
+%%
+%%
+%%
+%介绍SafeExit在Tor中的用途
+ %SafeExit为Tor的一种可选项，Tor用户不使用SafeExit仍然可以继续使用Tor进行匿名通信；
+ %exit node可在其Exit policy中规定用户使用SafeExit，提高对自身的保护；
+ %用户自主选择使用使用SafeExit
+%SafeExit introduces the audit onion router (AOR), which could collaboratively generate the proof that the exit node is not the originator of the traffic,
+%  \footnote{The audit conditions are beyond the scope of this paper.}
+% with graceful degradation of the anonymity provided by Tor.
+ \begin{itemize}
+  \item It is built on top of Tor, and the anonymity of Tor is not degraded.
+In the anon-cert phase,
+    the anonymous certificate is generated through a Tor circuit,
+    with the same level of assurance as Tor.
+The anonymous certificate is visible only to the A-Tor user,
+   the certification node and the exit node.
+In the anon-comm phase,
+    the certificate is presented as an anonymous credential to the exit node,
+    and no any other identity information is transmitted on the second Tor circuit.
+The anonymity would be broken,
+  only when \emph{a}) the ORs of the anon-comm Tor circuit,
+    or \emph{b}) the ORs of the anon-cert Tor circuit and the exit node of the anon-comm Tor circuit,
+    collude to link the A-Tor user to his/her network activities.
+
+\item
+Non-repudiation is achieved in the revocation of anonymity.
+In the application of anonymous certificates,
+    a chain of evidences are generated by the A-Tor user and the ORs,
+ and each evidence is signed by the generator and sent to in the next node of the anon-cert Tor circuit.
+During the anonymous communication,
+    the network packets to the destination server
+     are signed and verified by the exit node using the anonymous certificate.
+Therefore,
+  these proofs are verifiable to law enforcement agencies,
+  and could not be forged by malicious ORs cooperatively against an innocent user.
+
+%In SafeExit, the verifiable proof is generated by a set of AORs selected by the user. Any single node (e.g., the exit node or AOR) cannot link the user with its activities.
+       %in which case the attackers can also monitor the traffic of Tor for the user's identifier.
+\item
+A-Tor is an extension of Tor, and inter-operable with the existing Tor ORs.
+No additional component is needed in A-Tor, compared with Tor.
+A-Tor extension functions are implemented by Tor ORs,
+   and transparent to the destination servers.
+An anonymous user may enable the A-Tor extension or use the original version of Tor,
+   to construct the anonymous communication circuit.
+Then,
+  the exit node will choose to forward or reject the packets,
+  according to its own policy (and also the destination addresses, ports, and application protocols of the packets).
+
+% It provides another option for relays who have the intension to contribute as exit nodes, but are concerned about the possible legal burden if the service is abused.  Now they could contribute as SafeExit nodes, with an added layer of protection.
+% On the other hand, Tor users may enable SafeExit easily with little modification on the user side and no modification on the targeted applications (i.e., the destination). When SafeExit is enabled, the users will have an additional set of exit relay nodes to choose from. We would like to emphasis that, relays and users who prefer not to employ the SafeExit extension will continue to operate as usual, since our proposal does not interfere with the conventional Tor infrastructure.
+%  \item It significantly eliminates the legal burden for the SafeExit nodes, if their service is abused by illegal use of Tor. When required by law enforcement, the SafeExit node could provide a verifiable proof, which shows that the traffic is sent by a user of the anonymity service. %Therefore, more nodes are voluntary to be exit nodes, which results in a more prosperous Tor network, increases the difficulty of traffic analysis, and attracts more users to adopt Tor.
+\end{itemize}
+
+
+%The exit node can specify the \emph{exit poly} to describe that it only relays the traffic from the user who has adopted the SafeExit. When abuse issues are found, the
+
+The remainder of this paper is organized as follows.
+Section \ref{sec:background} is the background and related work.
+Section \ref{sec:Overview} presents the design of A-Tor,
+  and the detailed protocol of A-Tor is described in Section \ref{sec:safeexit}.
+A-Tor is evaluated in Section \ref{sec:analysis},
+ and Section \ref{sec:conclusion} draws the conclusions.
